@@ -254,7 +254,7 @@ def crear_recordatorio_voz():
         hora = get_hora(hora_str)
         
     elif freq == "diaria":
-        dia_i = datetime.date.today()
+        dia_i = datetime.datetime.now()
         talk("¿A qué hora?")
         hora_str = take_command()
         hora_str = normalize(hora_str)           
@@ -357,7 +357,7 @@ def get_eventos(day, end_day, service, speech=True):
                 mes_str = str(start.split("T")[0].split("-")[1])
                 dia_str = str(start.split("T")[0].split("-")[2])
                 
-                fechaInicial = datetime.date(month=int(mes_str), day=int(dia_str), year=int(anio_str))
+                fechaInicial = datetime.datetime(month=int(mes_str), day=int(dia_str), year=int(anio_str))
                 #fechaInicial = fechaInicial.replace(hour=hora_i, minute=minute_i)
                 
                 #HORA
@@ -381,7 +381,7 @@ def get_eventos(day, end_day, service, speech=True):
 # Se le pasan los parametros del evento y lo crea en el calendar
 def set_evento(service, nombre, fecha, hora, freq, count):
     try:
-        start = str(fecha.year)+'-'+str(fecha.month)+'-'+str(fecha.day)+'T'+hora+':00+02:00'
+        start = str(fecha.year)+'-'+str(fecha.month)+'-'+str(fecha.day)+'T'+hora+'+02:00'
         
         array_hora = hora.split(':')
         houri = int(array_hora[0])
@@ -495,7 +495,7 @@ def get_fecha(text):
         mes = now.month
         
     print(f"{dia}/{mes}/{anio}")
-    return datetime.date(month=mes, day=dia, year=anio)
+    return datetime.datetime(month=mes, day=dia, year=anio)
 
 def ejemploRecordatorioUnaSolaEjec():
     print("ILLOOOOO")
@@ -521,6 +521,7 @@ def syncCalendars(service):
     print("Actualizado.")
     
 def mycare_pln_start():
+    talk("Hola amigo")
     SERVICE = auntetificacion_google()
     syncCalendars(SERVICE)
     speed = engine.getProperty('rate')
@@ -530,7 +531,7 @@ def mycare_pln_start():
     text1="3 de mayo"
     text2="3 de junio"
     #array=get_eventos(get_fecha(text1), get_fecha(text2), SERVICE)
-    #gestorEventos.defineEvento("pastillas", "diaria", datetime.datetime.now(), "17:00:00", "lunes", count=2, id_calendar=None)
+    #gestorEventos.defineEvento("pastillas2", "diaria", datetime.datetime.now(), "17:00:00", "lunes", count=2, id_calendar=None)
 
     run_alexa()
 

@@ -134,7 +134,7 @@ class GestorEventos:
         eventos = self.cur.fetchall()
         res = []
         for e in eventos:
-            fechai = datetime.datetime.strptime(e[4], '%Y-%m-%d')
+            fechai = datetime.datetime.strptime(e[4], '%Y-%m-%d %H:%M:%S')
             res.append(Evento(e[2], e[3], fechai , e[5], e[6], count=e[7], id=e[0], id_calendar=e[1]))
         return res
 """
