@@ -73,8 +73,8 @@ def talk(text):
 def take_command():
     try:
         with sr.Microphone() as source:
+            listener.adjust_for_ambient_noise(source, duration=1)
             print("listening...")
-            listener.adjust_for_ambient_noise(source, duration=0.5)
             voice = listener.listen(source, timeout=5)
             command = listener.recognize_google(voice, language="es-ES")
             command = command.lower()
@@ -221,7 +221,7 @@ def crear_recordatorio_voz():
     freq = normalize(freq)
     talk("La frecuencia de repetición es " + freq)
     print(str(freq))
-    
+    """
     if "minutos" in freq:
         talk("Dime en cuantos minutos sonará el recordatorio")
         minutos = normalize(take_command())
@@ -250,8 +250,8 @@ def crear_recordatorio_voz():
             count = take_command()
             count = normalize(count) 
             counti = text2int(count)
-            
-    elif "semanal" in freq or "mensual" in freq:
+    """        
+    if "semanal" in freq or "mensual" in freq:
         talk("Dime el dia de inicio")                
         dia = take_command()
         talk( ("El dia de inicio es "+dia) )
