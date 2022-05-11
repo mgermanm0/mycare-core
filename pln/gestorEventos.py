@@ -13,7 +13,7 @@ class Evento:
     #Titulo, es lo que el asistente de voz entonará al activarse el evento/recordatorio
     #Frecuencia es p.e minutos, semanal, diaria
     #Fecha (objeto datetime) tendrá toda la información del día, mes, año y hora
-    def __init__(self, titulo, frecuencia, fechaInicial, hora, diaSemana, until = None, id=None, id_calendar=None):
+    def __init__(self, titulo, frecuencia, fechaInicial, hora, diaSemana, until = None, id=None, id_calendar=None, engine = None):
         self.id = id
         self.id_calendar = id_calendar
         self.titulo = titulo
@@ -22,6 +22,7 @@ class Evento:
         self.hora = hora
         self.diaSemana = diaSemana
         self.recurrente = False
+        self.engine = None
         if until is None:
             self.until = fechaInicial
         else:
@@ -31,7 +32,7 @@ class Evento:
         self.count -= 1
 
 class GestorEventos:
-    def __init__(self):
+    def __init__(self, engine):
         self.eventos = []
         self.conn = sqlite3.connect(dbFile, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
         self.cur = self.conn.cursor()
@@ -51,7 +52,9 @@ class GestorEventos:
             print('Tabla eventos creada')
         else:
             print('Tabla eventos ya existe')
+        self.engine = engine
         self.recuperaEventosDB()
+        
     
         
     #Método utilizado para recuperar los eventos de la base de datos sqlite
@@ -68,7 +71,6 @@ class GestorEventos:
         hora = evento.hora
         fini = evento.fechaInicial
         diaSemana = evento.diaSemana
-        titulo = evento.titulo
         until = evento.until + datetime.timedelta(minutes=1)
         '''
         if frecuencia == "minutos":
@@ -78,21 +80,21 @@ class GestorEventos:
         '''
         if "semana" in frecuencia:
             if diaSemana == "lunes":
-                schedule.every().monday.at(hora).until(until).do(self.ejecutaEvento,titulo)
+                schedule.every().monday.at(hora).until(until).do(self.ejecutaEvento,evento)
             elif diaSemana == "martes":
-                schedule.every().tuesday.at(hora).until(until).do(self.ejecutaEvento,titulo)
+                schedule.every().tuesday.at(hora).until(until).do(self.ejecutaEvento,evento)
             elif diaSemana == "miercoles":
-                schedule.every().wednesday.at(hora).until(until).do(self.ejecutaEvento,titulo)
+                schedule.every().wednesday.at(hora).until(until).do(self.ejecutaEvento,evento)
             elif diaSemana == "jueves":
-                schedule.every().thursday.at(hora).until(until).do(self.ejecutaEvento,titulo)
+                schedule.every().thursday.at(hora).until(until).do(self.ejecutaEvento,evento)
             elif diaSemana == "viernes":
-                schedule.every().friday.at(hora).until(until).do(self.ejecutaEvento,titulo)
+                schedule.every().friday.at(hora).until(until).do(self.ejecutaEvento,evento)
             elif diaSemana == "sabado":
-                schedule.every().saturday.at(hora).until(until).do(self.ejecutaEvento,titulo)
+                schedule.every().saturday.at(hora).until(until).do(self.ejecutaEvento,evento)
             elif diaSemana == "domingo":
-                schedule.every().sunday.at(hora).until(until).do(self.ejecutaEvento,titulo)
+                schedule.every().sunday.at(hora).until(until).do(self.ejecutaEvento,evento)
         elif "dia" in frecuencia:
-            schedule.every().day.at(hora).until(until).do(self.ejecutaEvento, titulo)
+            schedule.every().day.at(hora).until(until).do(self.ejecutaEvento, evento)
         elif "men" in frecuencia or "mensual" in frecuencia:
             seconds = fini - datetime.datetime.now()
             schedule.every()
@@ -103,10 +105,14 @@ class GestorEventos:
     
     def ejecutaEventoUnico(self, evento):
         print("RECORDATIO DE UNA VEZ", evento.titulo)
+        self.engine.say("Recuerda: " + evento.titulo)
+        self.engine.runAndWait()
         return schedule.CancelJob     
     
-    def ejecutaEvento(self, args):
-        print("RECORDATORIO: ", args)
+    def ejecutaEvento(self, evento):
+        print("RECORDATORIO: ", evento.titulo)
+        self.engine.say("Recuerda: " + evento.titulo)
+        self.engine.runAndWait()
         """
         evento_index = self.buscaEvento(args)
         evento = self.eventos[evento_index]
@@ -124,16 +130,20 @@ class GestorEventos:
             self.conn.commit()
         """
     
-
+    def run_pending(self):
+        schedule.run_pending()
+        
     def defineEvento(self, titulo, frecuencia, fechaInicial, hora = "00:00", diaSemana = "", count = None, id_calendar=None, until_precalc = None ):
         until = until_precalc
-        if until is None:
+        if until is None and "unica" not in frecuencia:
             if "semana" in frecuencia:
                 until = fechaInicial + datetime.timedelta(weeks=count)
             elif "mensual" in frecuencia or "mes" in frecuencia:
                 until = fechaInicial + relativedelta(months=count)
             elif "dia" in frecuencia:
                 until = fechaInicial + datetime.timedelta(days=count)
+            ihora, imin = hora.split(":")
+            until = until.replace(hour = int(ihora), minute= int(imin))
                 
         sqlite_insert = """INSERT INTO 'eventos' 
                         ('calendar_id', 'titulo', 'frecuencia', 'fechaInicial', 'hora', 'diaSemana', 'until')

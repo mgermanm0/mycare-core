@@ -25,7 +25,9 @@ from pln.audioplayer import AudioPlayer
 from pln.gestorEventos import GestorEventos
 from pln.gestorEventos import Evento
 
-gestorEventos = GestorEventos()
+engine = pyttsx3.init()
+listener = sr.Recognizer()
+gestorEventos = GestorEventos(engine)
 audioplayer = AudioPlayer()
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -61,8 +63,7 @@ def autentificacion_google():
   
 SERVICE = autentificacion_google()
 
-engine = pyttsx3.init()
-listener = sr.Recognizer()
+
 # normalize
 # 
 # Sirve para eliminar las tildes y pasar las mayusculas a minusculas. Para simplificar comparaciones entre strings
@@ -107,7 +108,7 @@ def take_command():
     except Exception as e:
         command = ""
         print(str(e))
-        talk("Lo siento, ha ocurrido un error. Prueba a repetir el comando.")
+        #talk("Lo siento, ha ocurrido un error. Prueba a repetir el comando.")
         pass
     
     return command
@@ -186,6 +187,7 @@ def get_hora(text):
 
 #Función principal que escucha al usuario y determina que orden ejecutar      
 def run_alexa():
+    gestorEventos.run_pending()
     comando = take_command()
     #talk(command)
     
@@ -239,87 +241,56 @@ def run_alexa():
 def crear_recordatorio_voz():
     counti = None
     dia_i = None
+    say = ""
     talk("Vamos a ello. Dime un nombre para el recordatorio")
     nombre = take_command()
     print(str(nombre))
     talk("El nombre del recordatorio es "+nombre)
     
-    talk("¿Quieres que se repita cada minuto, cada hora, diariamente, semanalmente o mensualmente?")
+    talk("¿Quieres que se repita diariamente, semanalmente o mensualmente?")
     freq = take_command()
     freq = normalize(freq)
     talk("La frecuencia de repetición es " + freq)
     print(str(freq))
-    """
-    if "minutos" in freq:
-        talk("Dime en cuantos minutos sonará el recordatorio")
-        minutos = normalize(take_command())
-        minutos_int = text2int(minutos)
-        if(minutos_int is not None):
-            now = datetime.datetime.now()
-            dia_i = now + datetime.timedelta(minutes = minutos_int) #Sumamos los minutos, ya que se supone que el usuario diría 'En x minutos'
-            hora = dia_i.time()
-            talk(f'El recordatoio sonará cada {minutos_int} minutos. ¿Cuántas veces se repetirá el recordatorio?')
-            count = take_command()
-            count = normalize(count) 
-            counti = text2int(count)
-            
-    elif "horas" in freq: # Revisar frecuencia horas
-        talk("Dime en cuantas horas sonará el recordatorio")
-        hora_str = normalize(take_command())
-        hora = get_hora(hora_str)
-        horaMinutos = hora.split(':')
-        hora_int = text2int(horaMinutos[0])
-        minutos_int = text2int(horaMinutos[1])
-        if(hora is not None):
-            now = datetime.datetime.now()
-            dia_i = now + datetime.timedelta(hours = hora_int, minutes = minutos_int) #Sumamos las horas y los minutos, ya que se supone que el usuario diría 'En x horas e y minutos'
-            hora = str(dia_i.time().hour + ':' + dia_i.time().minute)
-            talk(f'El recordatoio sonará cada {minutos_int} horas. ¿Cuántas veces se repetirá el recordatorio?')
-            count = take_command()
-            count = normalize(count) 
-            counti = text2int(count)
-    """        
-    if "semanal" in freq or "mensual" in freq:
-        talk("Dime el dia de inicio")                
-        dia = take_command()
-        talk( ("El dia de inicio es "+dia) )
-        dia = normalize(dia)
-        dia_i = get_fecha(dia)
-        
-        if "semanal" in freq:
-            talk("¿Durante cuantas semanas quieres que se repita?")
 
-        elif "mensual" in freq:
-            talk("¿Durante cuantos meses quieres que se repita?")
-        
-        count = take_command()
-        count = normalize(count)
-        print(count)
-        counti = text2int(count)
-        print(str(counti))
-        talk("¿A qué hora?")
-        hora_str = take_command()
-        hora_str = normalize(hora_str)           
-        hora = get_hora(hora_str)
-        
-    elif "dia" in freq :
-        dia_i = datetime.datetime.now()
-        talk("El recordatorio sonará diariamente. ¿A qué hora?")
-        hora_str = take_command()
-        hora_str = normalize(hora_str)           
-        hora = get_hora(hora_str)
-        talk("¿Durante cuantos dias?")
-        count = take_command()
-        count = normalize(count) 
-        #counti = int(count)
+    talk("Dime el dia de inicio")                
+    dia = take_command()
+    talk( ("El dia de inicio es "+dia) )
+    dia = normalize(dia)
+    dia_i = get_fecha(dia)
 
-        counti = text2int(count)
-        print(str(counti))
+    if "semanal" in freq:
+        freq = "semanal"
+        say = "cuantas semanas"
+
+    elif "mensual" in freq:
+        freq="mensual"
+        say = "cuantos meses"
+    
+    elif "dia" in freq:
+        freq = "dias"
+        say = " cuantos días "
+    else:
+        talk("No entiendo esa frecuencia. Prueba a crear de nuevo el recordatorio")
+        return
+    
+    talk(f'¿Durante {say} quieres que se repita?')
+    count = take_command()
+    count = normalize(count)
+    print(count)
+    counti = text2int(count)
+    print(str(counti))
+
+    talk("¿A qué hora?")
+    hora_str = take_command()
+    hora_str = normalize(hora_str)           
+    hora = get_hora(hora_str)
     if(dia_i is not None):
         dia_i = dia_i.replace(microsecond=0)
         id_calendar = set_evento(SERVICE, nombre, dia_i, hora, freq, counti)
         gestorEventos.defineEvento(nombre, freq, dia_i, hora, DIAS[dia_i.weekday()], count = counti, id_calendar=id_calendar) #Agregamos el evento al gestorEventos mediante este método
-        talk(f'¡Perfecto! He creado el recordatorio {nombre} con frecuencia {freq} que se repetirá {count} veces.')
+        talk(f'¡Perfecto! He creado el recordatorio {nombre} que se repetirá {count} veces.')
+        talk(f'Te lo recordaré {freq}')
   
 
 
@@ -347,7 +318,7 @@ def calendar2local(event):
     
     #DIA SEMANA (que lo calcule por otro lao)
     dia_semana=DIAS[fechaInicial.weekday()]
-    evento = Evento(titulo, "unica", fechaInicial, hora, dia_semana, count=1, id_calendar=calendar_id)
+    evento = Evento(titulo, "unica", fechaInicial, hora, dia_semana, id_calendar=calendar_id)
     return evento
 
 # Dado un rango de días obtiene los eventos que haya a lo largo de ese periodo.
@@ -396,7 +367,6 @@ def get_eventos(day, end_day, service, speech=True):
                     frecuencia = RULE2SPANISH[recurrence.split(";")[0].split("=")[1]]
                     
                     eventoACrear = calendar2local(recurringEvent)
-                    eventoACrear.recurrente = True
                     eventoACrear.frecuencia = frecuencia
                     
                     instances = service.events().instances(calendarId='primary', eventId=event['recurringEventId']).execute()
@@ -417,7 +387,7 @@ def get_eventos(day, end_day, service, speech=True):
         print(str(e))
     
 # Se le pasan los parametros del evento y lo crea en el calendar
-def set_evento(service, nombre, fecha, hora, freq, count):
+def set_evento(service, nombre, fecha, hora, freq, count=0, until=None):
     try:
         start = str(fecha.year)+'-'+str(fecha.month)+'-'+str(fecha.day)+'T'+hora+':00+02:00'
         
@@ -439,7 +409,11 @@ def set_evento(service, nombre, fecha, hora, freq, count):
             freq='RRULE:FREQ=WEEKLY'
         elif 'mensua' in freq:
             freq='RRULE:FREQ=MONTHLY'
-            
+
+        if until is not None and "RRULE" in freq:
+            untilstr = until.strftime("%Y%m%dT%H%M%SZ")
+            freq+=';UNTIL=' + untilstr
+
         if count!=0:
             freq=freq+";COUNT="+str(count)
             
@@ -491,15 +465,7 @@ def get_fecha(text):
     ndias = 0
     
     if 'mañana' in text:
-        dia = now.day + 1
-        mes = now.month
-        anio = now.year
-        if (now.month in DIAS31 and dia > 31) or (now.month in DIAS30 and dia > 30) or (now.month == 2 and dia > 28):
-            dia = 1
-            mes = mes + 1
-            if mes > 12:
-                mes = 1
-                anio = anio +1
+        return now + datetime.timedelta(days=1)
     else:
         for word in text.split():
             if word in MESES:
@@ -515,23 +481,23 @@ def get_fecha(text):
             elif word.isdigit():
                 dia = int(word)      
             
-    if mes < now.month and mes != -1:
-        anio = anio + 1
-        
-    if dia < now.day and mes == -1  and dia != -1:
-        mes = now.month + 1
-    elif mes == -1 and dia == -1 and dia_semana !=-1:
-        dia_semana_actual = now.weekday()
-        dif = dia_semana - dia_semana_actual
-        
-        if dif < 0:
-            dif = dif + 7
+        if mes < now.month and mes != -1:
+            anio = anio + 1
             
-        return now + datetime.timedelta(dif)
-    
-    if mes == -1:
-        mes = now.month
+        if dia < now.day and mes == -1  and dia != -1:
+            mes = now.month + 1
+        elif mes == -1 and dia == -1 and dia_semana !=-1:
+            dia_semana_actual = now.weekday()
+            dif = dia_semana - dia_semana_actual
+            
+            if dif < 0:
+                dif = dif + 7
+                
+            return now + datetime.timedelta(dif)
         
+        if mes == -1:
+            mes = now.month
+            
     print(f"{dia}/{mes}/{anio}")
     return datetime.datetime(month=mes, day=dia, year=anio)
 
@@ -550,8 +516,8 @@ def syncCalendars(service):
     eventos_local=gestorEventos.getEventosDB()
     for evento in eventos_local:
         if evento.id_calendar is None:
-            etag = set_evento(service, evento.titulo, evento.fechaInicial, evento.hora, evento.frecuencia, evento.count)
-            gestorEventos.actualizaIDCalendar(evento.id, etag)
+            id = set_evento(service, evento.titulo, evento.fechaInicial, evento.hora, evento.frecuencia, until=evento.until)
+            gestorEventos.actualizaIDCalendar(evento.id, id)
     eventos_calendar = get_eventos(hoy, mes, service, speech=False)
     for evento in eventos_calendar:
         if not gestorEventos.existeEventoConCalendar(evento.id_calendar):
@@ -561,7 +527,7 @@ def syncCalendars(service):
 def mycare_pln_start():
     talk("Hola amigo")
     
-    #syncCalendars(SERVICE)
+    syncCalendars(SERVICE)
     #print(speed)
     engine.setProperty('rate', 150)
     
@@ -569,7 +535,6 @@ def mycare_pln_start():
     text2="3 de junio"
     #array=get_eventos(get_fecha(text1), get_fecha(text2), SERVICE)
     #gestorEventos.defineEvento("pastillas2", "diaria", datetime.datetime.now(), "17:00:00", "lunes", count=2, id_calendar=None)
-    i = False
     while True:
         run_alexa()
 
