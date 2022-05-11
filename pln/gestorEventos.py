@@ -1,9 +1,12 @@
+from calendar import month
 from cgitb import reset
+from itertools import count
 import schedule
 import time
 import sqlite3
 import os
 import datetime
+from dateutil.relativedelta import relativedelta
 dirname = os.path.dirname(__file__)
 dbFile = 'myCareDB.db'
 class Evento:
@@ -18,7 +21,9 @@ class Evento:
         self.fechaInicial = fechaInicial
         self.hora = hora
         self.diaSemana = diaSemana
-        self.count = count
+        self.recurrente = False
+        self.until = self.fechaInicial
+        self.count = 1
     def eventoIteracion(self):
         self.count -= 1
 
@@ -37,8 +42,9 @@ class GestorEventos:
                 frecuencia TEXT, 
                 fechaInicial DATETIME, 
                 hora TEXT, 
-                diaSemana TEXT, 
-                count INTEGER);'''
+                diaSemana TEXT,
+                count INTEGER,  
+                until DATETIME);''' # revisar count
             self.cur.execute(sqlite_create_table_query)
             print('Tabla eventos creada')
         else:
@@ -58,33 +64,43 @@ class GestorEventos:
     def addEventoScheduler(self, evento):
         frecuencia = evento.frecuencia
         hora = evento.hora
+        fini = evento.fechaInicial
         diaSemana = evento.diaSemana
         titulo = evento.titulo
+        until = evento.until + datetime.timedelta(minutes=1)
         if frecuencia == "minutos":
-            schedule.every().day.at(hora).do(self.ejecutaEvento,titulo) 
-                
+            schedule.every().day.at(hora).until(until).do(self.ejecutaEvento,titulo)
         elif frecuencia == "horas":
-            schedule.every().day.at(hora).do(self.ejecutaEvento,titulo)
+            schedule.every().day.at(hora).until(until).do(self.ejecutaEvento,titulo)
         elif frecuencia == "semanal":
             if diaSemana == "lunes":
-                schedule.every().monday.at(hora).do(self.ejecutaEvento,titulo)
+                schedule.every().monday.at(hora).until(until).do(self.ejecutaEvento,titulo)
             elif diaSemana == "martes":
-                schedule.every().tuesday.at(hora).do(self.ejecutaEvento,titulo)
+                schedule.every().tuesday.at(hora).until(until).do(self.ejecutaEvento,titulo)
             elif diaSemana == "miercoles":
-                schedule.every().wednesday.at(hora).do(self.ejecutaEvento,titulo)
+                schedule.every().wednesday.at(hora).until(until).do(self.ejecutaEvento,titulo)
             elif diaSemana == "jueves":
-                schedule.every().thursday.at(hora).do(self.ejecutaEvento,titulo)
+                schedule.every().thursday.at(hora).until(until).do(self.ejecutaEvento,titulo)
             elif diaSemana == "viernes":
-                schedule.every().friday.at(hora).do(self.ejecutaEvento,titulo)
+                schedule.every().friday.at(hora).until(until).do(self.ejecutaEvento,titulo)
             elif diaSemana == "sabado":
-                schedule.every().saturday.at(hora).do(self.ejecutaEvento,titulo)
+                schedule.every().saturday.at(hora).until(until).do(self.ejecutaEvento,titulo)
             elif diaSemana == "domingo":
-                schedule.every().sunday.at(hora).do(self.ejecutaEvento,titulo)
+                schedule.every().sunday.at(hora).until(until).do(self.ejecutaEvento,titulo)
         elif frecuencia == "diaria":
-            schedule.every().day.at(hora).do(self.ejecutaEvento, titulo)
-
+            schedule.every().day.at(hora).until(until).do(self.ejecutaEvento, titulo)
+        else:
+            seconds = fini - datetime.datetime.now()
+            seconds = seconds.total_seconds()
+            schedule.every(int(seconds)).seconds.do(self.ejecutaEventoUnico,evento)
+    
+    def ejecutaEventoUnico(self, evento):
+        print("RECORDATIO DE UNA VEZ", evento.titulo)
+        return schedule.CancelJob     
+    
     def ejecutaEvento(self, args):
         print("RECORDATORIO: ", args)
+        """
         evento_index = self.buscaEvento(args)
         evento = self.eventos[evento_index]
         evento.count = evento.count - 1
@@ -99,18 +115,31 @@ class GestorEventos:
             data_tuple = (evento.count, evento.id)
             self.cur.execute(update_sqlite, data_tuple)
             self.conn.commit()
-        
+        """
     
 
-    def defineEvento(self, titulo, frecuencia, fechaInicial, hora = "00:00", diaSemana = "", count = 1, id_calendar=None ):
+    def defineEvento(self, titulo, frecuencia, fechaInicial, hora = "00:00", diaSemana = "", count = None, id_calendar=None, until_precalc = None ):
+        until = until_precalc
+        if until is None:
+            if frecuencia == "semanal":
+                until = fechaInicial + datetime.timedelta(weeks=count)
+            elif frecuencia == "mensual":
+                until = fechaInicial + relativedelta(months=count)
+            elif frecuencia == "diaria":
+                until = fechaInicial + datetime.timedelta(days=count)
+            elif frecuencia == "minutos":
+                until = fechaInicial + datetime.timedelta(minutes=count)
+            elif frecuencia == "horas":
+                until = fechaInicial + datetime.timedelta(hours=count)
+                
         sqlite_insert = """INSERT INTO 'eventos' 
-                        ('calendar_id', 'titulo', 'frecuencia', 'fechaInicial', 'hora', 'diaSemana', 'count')
+                        ('calendar_id', 'titulo', 'frecuencia', 'fechaInicial', 'hora', 'diaSemana', 'until')
                         VALUES (?,?,?,?,?,?,?);"""
-        data_tuple = (id_calendar, titulo, frecuencia, fechaInicial, hora, diaSemana, count)
+        data_tuple = (id_calendar, titulo, frecuencia, fechaInicial, hora, diaSemana, until)
         self.cur.execute(sqlite_insert, data_tuple)
         self.conn.commit()
         auto_id = self.cur.lastrowid
-        evento = Evento(id_calendar, titulo, frecuencia, fechaInicial, hora, diaSemana, count)
+        evento = Evento(id_calendar, titulo, frecuencia, fechaInicial, hora, diaSemana, until)
         print("id auto generado es: ", auto_id)
         self.eventos.append(evento)
         self.addEventoScheduler(evento)
