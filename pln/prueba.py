@@ -35,7 +35,31 @@ DIAS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'
 DIAS31 = [ 1, 3, 5, 7, 8, 10, 12 ]
 DIAS30 = [ 4, 6, 9, 11]
 RULE2SPANISH = {'DAILY': 'diaria', 'WEEKLY': 'semanal', 'MONTHLY': 'mensual'}
-SERVICE = ""
+
+def autentificacion_google():
+    try:
+        creds = None
+        if os.path.exists('token.json'):
+            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        # If there are no (valid) credentials available, let the user log in.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    'credentials.json', SCOPES)
+                creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+            with open('token.json', 'w') as token:
+                token.write(creds.to_json())
+        
+        service = build('calendar', 'v3', credentials=creds)
+        return service
+    except Exception as e:
+        print('-- ERROR EN auntetificacion_google() --')
+        print(str(e))
+  
+SERVICE = autentificacion_google()
 
 engine = pyttsx3.init()
 listener = sr.Recognizer()
@@ -73,9 +97,10 @@ def talk(text):
 def take_command():
     try:
         with sr.Microphone() as source:
-            listener.adjust_for_ambient_noise(source, duration=1)
+            listener.adjust_for_ambient_noise(source, duration=0.5)
             print("listening...")
-            voice = listener.listen(source, timeout=5)
+            voice = listener.record(source, duration=5)
+            
             command = listener.recognize_google(voice, language="es-ES")
             command = command.lower()
             print("Audio recogido: ", command)           
@@ -110,6 +135,7 @@ def establecer_alarma(hora):
 # param [in] textnum string
 # return int
 def text2int(textnum, numwords={}):
+    
     if not numwords:
       units = [
         "cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho",
@@ -129,7 +155,7 @@ def text2int(textnum, numwords={}):
     current = result = 0
     for word in textnum.split():
         if word not in numwords:
-          raise Exception("Illegal word: " + word)
+          return None
 
         scale, increment = numwords[word]
         current = current * scale + increment
@@ -152,7 +178,7 @@ def get_hora(text):
         h = array2[0]
         hi = int(h)
         hi = hi + 12
-        hora = str(hi)+":"+array2[1]
+        hora = str(hi%24)+":"+array2[1]
     
     print(hora)
     return hora
@@ -202,7 +228,7 @@ def run_alexa():
         confirmacion = take_command()
         confirmacion = normalize(confirmacion)
         print(str(confirmacion))
-        if confirmacion == "si":
+        if "si" in confirmacion:
             crear_recordatorio_voz()        
             
 
@@ -211,6 +237,8 @@ def run_alexa():
 #
 # Funcion que va preguntando los parametros por voz al usuario. Y crea un evento en el calendar           
 def crear_recordatorio_voz():
+    counti = None
+    dia_i = None
     talk("Vamos a ello. Dime un nombre para el recordatorio")
     nombre = take_command()
     print(str(nombre))
@@ -274,7 +302,7 @@ def crear_recordatorio_voz():
         hora_str = normalize(hora_str)           
         hora = get_hora(hora_str)
         
-    elif "diaria" in freq:
+    elif "dia" in freq :
         dia_i = datetime.datetime.now()
         talk("El recordatorio sonará diariamente. ¿A qué hora?")
         hora_str = take_command()
@@ -283,36 +311,17 @@ def crear_recordatorio_voz():
         talk("¿Durante cuantos dias?")
         count = take_command()
         count = normalize(count) 
+        #counti = int(count)
+
         counti = text2int(count)
         print(str(counti))
-    
-    gestorEventos.defineEvento(nombre, freq, dia_i, hora, DIAS[dia_i.weekday()], count) #Agregamos el evento al gestorEventos mediante este método
-    set_evento(SERVICE, nombre, dia_i, hora, freq, counti)
-    talk(f'¡Perfecto! He creado el recordatorio {nombre} con frecuencia {freq} que se repetirá {count} veces.')
+    if(dia_i is not None):
+        dia_i = dia_i.replace(microsecond=0)
+        id_calendar = set_evento(SERVICE, nombre, dia_i, hora, freq, counti)
+        gestorEventos.defineEvento(nombre, freq, dia_i, hora, DIAS[dia_i.weekday()], count = counti, id_calendar=id_calendar) #Agregamos el evento al gestorEventos mediante este método
+        talk(f'¡Perfecto! He creado el recordatorio {nombre} con frecuencia {freq} que se repetirá {count} veces.')
   
-def auntetificacion_google():
-    try:
-        creds = None
-        if os.path.exists('token.json'):
-            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-        # If there are no (valid) credentials available, let the user log in.
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', SCOPES)
-                creds = flow.run_local_server(port=0)
-            # Save the credentials for the next run
-            with open('token.json', 'w') as token:
-                token.write(creds.to_json())
-        
-        service = build('calendar', 'v3', credentials=creds)
-        return service
-    except Exception as e:
-        print('-- ERROR EN auntetificacion_google() --')
-        print(str(e))
-  
+
 
 
 
@@ -410,7 +419,7 @@ def get_eventos(day, end_day, service, speech=True):
 # Se le pasan los parametros del evento y lo crea en el calendar
 def set_evento(service, nombre, fecha, hora, freq, count):
     try:
-        start = str(fecha.year)+'-'+str(fecha.month)+'-'+str(fecha.day)+'T'+hora+'+02:00'
+        start = str(fecha.year)+'-'+str(fecha.month)+'-'+str(fecha.day)+'T'+hora+':00+02:00'
         
         array_hora = hora.split(':')
         houri = int(array_hora[0])
@@ -424,11 +433,11 @@ def set_evento(service, nombre, fecha, hora, freq, count):
                 
         end = str(fecha.year)+'-'+str(fecha.month)+'-'+str(fecha.day)+'T'+str(houri)+':'+str(mins)+':00+02:00'
         
-        if freq == 'diaria':
+        if 'dia' in freq :
             freq='RRULE:FREQ=DAILY'
-        elif freq == 'semanal':
+        elif 'semana' in freq:
             freq='RRULE:FREQ=WEEKLY'
-        else:
+        elif 'mensua' in freq:
             freq='RRULE:FREQ=MONTHLY'
             
         if count!=0:
@@ -461,7 +470,7 @@ def set_evento(service, nombre, fecha, hora, freq, count):
             },'''
         
         event = service.events().insert(calendarId="primary", body=event).execute()
-        return event['etag']
+        return event['id']
     except Exception as e:
         print('-- ERROR EN set_evento() --')
         print(str(e))
@@ -552,7 +561,6 @@ def syncCalendars(service):
 def mycare_pln_start():
     talk("Hola amigo")
     
-    SERVICE = auntetificacion_google()
     #syncCalendars(SERVICE)
     #print(speed)
     engine.setProperty('rate', 150)
