@@ -6,14 +6,14 @@ from vision.videocapture import VideoCapture
 #from recognizer import FaceRecognizer
 import cv2
 
-def mycare_vision_start():
+def mycare_vision_start(asistente):
 
     #generator = FaceDatasetGenerator(detector=detector, save_path="D:\\ProyectosPyCharm\\asistente\\vision\\datasets\\")
     #generator.generateDataset(name="manuelgm")
-    start()
+    start(asistente)
     pass
 
-def start(device=0) -> None:
+def start(asistente, device=0) -> None:
         cont = 0
         cam = CameraController("/dev/video0")
         cam.reset()
@@ -26,6 +26,7 @@ def start(device=0) -> None:
             faces = detector.detect(frame)
             if faces is not None:
                 tracker.track(frame, faces, device=0)
+                asistente.setUsername("Manuel")
                 #recognizer.recognize(faces[0])
             cv2.imshow("cv", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):

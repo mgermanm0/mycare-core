@@ -1,6 +1,7 @@
 from calendar import month
 from cgitb import reset
 from itertools import count
+import sched
 import schedule
 import time
 import sqlite3
@@ -62,9 +63,10 @@ class GestorEventos:
     def recuperaEventosDB(self):
         eventosDB = self.getEventosDB()
         for evento in eventosDB:
-            print("EVENTO CARGADO: ", evento.id, evento.titulo, evento.frecuencia)
-            self.eventos.append(evento)
-            self.addEventoScheduler(evento)
+            if evento.until > datetime.datetime.now():
+                print("EVENTO CARGADO: ", evento.id, evento.titulo, evento.frecuencia)
+                self.eventos.append(evento)
+                self.addEventoScheduler(evento)
             
     def addEventoScheduler(self, evento):
         frecuencia = evento.frecuencia
@@ -123,6 +125,9 @@ class GestorEventos:
             self.cur.execute(update_sqlite, data_tuple)
             self.conn.commit()
         """
+        
+    def addEjecucionScheduler(self, func, segs=10):
+        schedule.every(segs).seconds.do(func)
     
     def run_pending(self):
         schedule.run_pending()
