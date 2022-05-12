@@ -72,12 +72,6 @@ class GestorEventos:
         fini = evento.fechaInicial
         diaSemana = evento.diaSemana
         until = evento.until + datetime.timedelta(minutes=1)
-        '''
-        if frecuencia == "minutos":
-            schedule.every().day.at(hora).until(until).do(self.ejecutaEvento,titulo)
-        elif frecuencia == "horas":
-            schedule.every().day.at(hora).until(until).do(self.ejecutaEvento,titulo)
-        '''
         if "semana" in frecuencia:
             if diaSemana == "lunes":
                 schedule.every().monday.at(hora).until(until).do(self.ejecutaEvento,evento)
@@ -97,7 +91,7 @@ class GestorEventos:
             schedule.every().day.at(hora).until(until).do(self.ejecutaEvento, evento)
         elif "men" in frecuencia or "mensual" in frecuencia:
             seconds = fini - datetime.datetime.now()
-            schedule.every()
+            schedule.every(seconds).seconds.at(hora).until(until).do(self.ejecutaEvento, evento)
         else:
             seconds = fini - datetime.datetime.now()
             seconds = seconds.total_seconds()

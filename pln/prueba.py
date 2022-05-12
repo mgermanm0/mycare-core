@@ -167,23 +167,151 @@ def text2int(textnum, numwords={}):
     return result + current    
 
 
-# Get_Hora
-#
-# Se le pasa una hora, ej. "10:30 de la mañana", y extrae la hora "10:30"
+def unidades_horas(text):
+    units = [
+        "cero", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho",
+        "nueve", "diez", "once", "doce", "trece", "catorce", "quince",
+        "dieciseis", "siecisiete", "dieciocho", "diecinueve", "veinte" , "veintiuno"
+        "veinteidos", "veintitres", "veinticuatro" ]
+    
+    hs="-"
+    for u in units:
+        if u in text:
+            i = units.index(u)
+            if i == 0 or i== 24:
+                hs="00"
+                break
+            elif i == 1:
+                hs = "01"
+                break
+            elif i == 2:
+                hs = "02"
+                break
+            elif i == 3:
+                hs = "03"
+                break
+            elif i == 4:
+                hs = "04"
+            elif i == 5:
+                hs = "05"
+                break
+            elif i == 6:
+                hs = "06"
+            elif i == 7:
+                hs = "07"
+                break
+            elif i == 8:
+                hs = "08" 
+                break
+            elif i == 9:
+                hs = "09"
+                break
+            elif i == 10:
+                hs = "10"
+                break
+            elif i == 11:
+                hs = "11"
+                break
+            elif i == 12:
+                hs = "12"
+                break
+            elif i == 13:
+                hs = "13"
+            elif i == 14:
+                hs = "14"
+                break
+            elif i == 15:
+                hs = "15"
+                break
+            elif i == 16:
+                hs = "16"
+                break
+            elif i == 17:
+                hs = "17"
+                break
+            elif i == 18:
+                hs = "18"
+                break
+            elif i == 19:
+                hs = "19"
+                break
+            elif i == 20:
+                hs = "20"
+                break
+            elif i == 21:
+                hs = "21"
+                break
+            elif i == 22:
+                hs = "22"
+                break
+            else:
+                hs = "23"
+                break
+    return hs
+
+
+def unidades_mins(text):
+    minutos = [ "y cinco", "y diez", "y quince", "y cuarto", "y veinte", "y media", "treinta",
+                   "menos veinte" , "menos cuarto", "menos quince", "menos diez", "menos cinco" ]
+    ms="00"
+    for e in minutos:
+        if e in text:
+            i = minutos.index(e)
+            if i == 0:
+                ms="05"
+                break
+            elif i == 1:
+                ms = "10"
+                break
+            elif i == 2 or i == 3:
+                ms = "15"
+                break
+            elif i == 4:
+                ms = "20"
+            elif i == 5 or i == 6:
+                ms = "30"
+                break
+            elif i == 7:
+                ms = "40"
+                break
+            elif i == 8 or i == 9:
+                ms = "45" 
+                break
+            elif i == 10:
+                ms = "50"
+                break
+            else:
+                ms = "55"
+                break
+    return ms
+
+
 def get_hora(text):
-    array = text.split()
-    hora = array[0]
+    
+    if "a las " in text:
+        text=text.replace("a las ", "")
+    
+    hs = unidades_horas(text)
+    ms = unidades_mins(text)
+    
+    hora = None
+                          
+    if hs != "-":
+        hora = hs+":"+ms
+    else:
+        array = text.split()
+        hora = array[0]
+        
     print(hora)
     if "tarde" in text or "noche" in text:
         array2 = hora.split(':')
         h = array2[0]
         hi = int(h)
         hi = hi + 12
-        hora = str(hi%24)+":"+array2[1]
+        hora = str(hi)+":"+array2[1]
     
     print(hora)
     return hora
-
 
 #Función principal que escucha al usuario y determina que orden ejecutar      
 def run_alexa():
