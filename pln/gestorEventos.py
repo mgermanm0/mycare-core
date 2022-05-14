@@ -74,7 +74,7 @@ class GestorEventos:
         fini = evento.fechaInicial
         diaSemana = evento.diaSemana
         until = evento.until + datetime.timedelta(minutes=1)
-        if "semana" in frecuencia:
+        if "semana" in frecuencia or "men" in frecuencia or "mensual" in frecuencia:
             if diaSemana == "lunes":
                 schedule.every().monday.at(hora).until(until).do(self.ejecutaEvento,evento)
             elif diaSemana == "martes":
@@ -91,9 +91,6 @@ class GestorEventos:
                 schedule.every().sunday.at(hora).until(until).do(self.ejecutaEvento,evento)
         elif "dia" in frecuencia:
             schedule.every().day.at(hora).until(until).do(self.ejecutaEvento, evento)
-        elif "men" in frecuencia or "mensual" in frecuencia:
-            seconds = fini - datetime.datetime.now()
-            schedule.every(seconds).seconds.at(hora).until(until).do(self.ejecutaEvento, evento)
         else:
             seconds = fini - datetime.datetime.now()
             seconds = seconds.total_seconds()
@@ -106,7 +103,13 @@ class GestorEventos:
         return schedule.CancelJob     
     
     def ejecutaEvento(self, evento):
+        if "men" in evento.frecuencia or "mensual" in evento.frecuencia:
+            today = datetime.datetime.now()
+            if not today.day == evento.fechaInicio.day:
+                return
+                
         print("RECORDATORIO: ", evento.titulo)
+        
         self.engine.say("Recuerda: " + evento.titulo)
         self.engine.runAndWait()
         """

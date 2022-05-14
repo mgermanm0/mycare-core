@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import os
 import time
+from constantes import DEBUG
 from vision.spooler import Spooler
 from vision.videocapture import VideoCapture
 class AbstractTracker:
@@ -21,17 +22,18 @@ class RegionTracker(AbstractTracker):
         self.height = height
         pass
 
-    def track(self, frame, faces, device=0) -> None:
+    def track(self, frame, faces) -> None:
         centerScreenX = int(self.width/2)
         centerScreenY = int(self.height/2)
-        offsetX = 100
-        offsetY = 70
+        offsetX = int(self.width/5)
+        offsetY = int(self.width/6)
         X0_rect = centerScreenX-offsetX
         Y0_rect = centerScreenY-offsetY
         X1_rect = centerScreenX+offsetX
         Y1_rect = centerScreenY+offsetY
         text=""
-        cv2.rectangle(frame, (X0_rect,Y0_rect), (X1_rect, Y1_rect), (0,100,0), 2)
+        if DEBUG:
+            cv2.rectangle(frame, (X0_rect,Y0_rect), (X1_rect, Y1_rect), (0,100,0), 2)
         if faces is not None:
             text = "Sin caras"
             (x,y,w,h) = faces[0]
@@ -40,7 +42,7 @@ class RegionTracker(AbstractTracker):
             if centerX >= centerScreenX-offsetX and centerX < centerScreenX+offsetX and centerY >= centerScreenY-offsetY and centerY < centerScreenY+offsetY:
                 text="Dentro"
             else:
-                #TODO test controller
+
                 text="Fuera"
                 tasks = []
                 if centerY < centerScreenY-offsetY:
@@ -61,6 +63,9 @@ class RegionTracker(AbstractTracker):
                     tasks.append((self.controller.right))
                 if len(tasks) > 0:
                     self.spooler.addTasks(tasks)
-            cv2.circle(frame, (centerX, centerY), 8, (255,0,0), -1)
-        cv2.putText(frame, text, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 2, cv2.LINE_AA)
+            if DEBUG:   
+                cv2.circle(frame, (centerX, centerY), 8, (255,0,0), -1)
+        if DEBUG:
+            cv2.putText(frame, text, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 2, cv2.LINE_AA)
+        
             

@@ -49,6 +49,7 @@ class AsistenteVoz():
         self.gestorEventos.addEjecucionScheduler(check.checkInternet)
         self.username = None
         self.lock = threading.Lock()
+        self.asistentevision = None
         
     def getUsername(self):
         try:
@@ -425,6 +426,12 @@ class AsistenteVoz():
             name = self.getUsername()
             if name is not None:
                 self.talk("Eres " + name)
+            else:
+                self.talk("Vaya, perdona, pero es que no te conozco. ¿Cómo te llamas?")
+                nombre = self.take_command()
+                nombre = self.normalize(nombre)
+                self.talk("Ah si, me suenas " + nombre + ". Déjame que recuerde quien eres...")
+                self.asistentevision.setEntreno(nombre)
         elif "ayuda" in comando:
             self.talk("Hola, soy el asistente virtual MyCare. Puedes pedirme que te recuerde algo diciendo pon un recordatorio o una frase similar y yo te guiaré por el proceso. También puedo reproducir videos de youtube y buscar en la wikipedia. O puedo también decirte la hora")
 
