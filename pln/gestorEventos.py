@@ -7,6 +7,7 @@ import time
 import sqlite3
 import os
 import datetime
+from playsound import playsound
 from dateutil.relativedelta import relativedelta
 dirname = os.path.dirname(__file__)
 dbFile = 'myCareDB.db'
@@ -97,17 +98,27 @@ class GestorEventos:
             schedule.every(int(seconds)).seconds.do(self.ejecutaEventoUnico,evento)
     
     def ejecutaEventoUnico(self, evento):
+        playsound('ding.mp3')
         print("RECORDATIO DE UNA VEZ", evento.titulo)
         self.engine.say("Recuerda: " + evento.titulo)
         self.engine.runAndWait()
         return schedule.CancelJob     
     
+    def ejecutaAlarma(self):
+        playsound('alarm.mp3')
+        self.engine.say("Alarma desactivada.")
+        self.engine.runAndWait()
+        return schedule.CancelJob 
+    
+    def estableceAlarma(self, hora):
+        schedule.every().day.at(hora).do(self.ejecutaAlarma)
+        
     def ejecutaEvento(self, evento):
         if "men" in evento.frecuencia or "mensual" in evento.frecuencia:
             today = datetime.datetime.now()
             if not today.day == evento.fechaInicio.day:
                 return
-                
+        playsound('ding.mp3')
         print("RECORDATORIO: ", evento.titulo)
         
         self.engine.say("Recuerda: " + evento.titulo)
