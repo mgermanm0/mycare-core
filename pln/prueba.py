@@ -172,39 +172,41 @@ class AsistenteVoz():
     # param [in] textnum string
     # return int
     def text2int(self, textnum, numwords={}):
+        try:
+            if not numwords:
+                units = [
+                    "cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho",
+                    "nueve", "diez", "once", "doce", "trece", "catorce", "quince",
+                    "dieciseis", "siecisiete", "dieciocho", "diecinueve",
+                ]
 
-        if not numwords:
-            units = [
-                "cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho",
-                "nueve", "diez", "once", "doce", "trece", "catorce", "quince",
-                "dieciseis", "siecisiete", "dieciocho", "diecinueve",
-            ]
+                tens = ["", "", "veinte", "treinta", "cuarenta",
+                        "cincuenta", "sesenta", "setenta", "ochenta", "noventa"]
 
-            tens = ["", "", "veinte", "treinta", "cuarenta",
-                    "cincuenta", "sesenta", "setenta", "ochenta", "noventa"]
+                scales = ["cien", "mil", "millon", "billon", "trillon"]
 
-            scales = ["cien", "mil", "millon", "billon", "trillon"]
+                numwords["y"] = (1, 0)
+                for idx, word in enumerate(units):
+                    numwords[word] = (1, idx)
+                for idx, word in enumerate(tens):
+                    numwords[word] = (1, idx * 10)
+                for idx, word in enumerate(scales):
+                    numwords[word] = (10 ** (idx * 3 or 2), 0)
 
-            numwords["y"] = (1, 0)
-            for idx, word in enumerate(units):
-                numwords[word] = (1, idx)
-            for idx, word in enumerate(tens):
-                numwords[word] = (1, idx * 10)
-            for idx, word in enumerate(scales):
-                numwords[word] = (10 ** (idx * 3 or 2), 0)
+            current = result = 0
+            for word in textnum.split():
+                if word not in numwords:
+                    return None
 
-        current = result = 0
-        for word in textnum.split():
-            if word not in numwords:
-                return None
+                scale, increment = numwords[word]
+                current = current * scale + increment
+                if scale > 100:
+                    result += current
+                    current = 0
 
-            scale, increment = numwords[word]
-            current = current * scale + increment
-            if scale > 100:
-                result += current
-                current = 0
-
-        return result + current
+            return result + current
+        except:
+            print("Error obteniendo count")
 
 
     def unidades_horas(self, text):
@@ -369,9 +371,13 @@ class AsistenteVoz():
 
         self.talk("Dime el dia de inicio")
         dia = self.take_command()
+        
         self.talk(("El dia de inicio es "+dia))
         dia = self.normalize(dia)
         dia_i = self.get_fecha(dia)
+        if dia_i is None:
+            self.talk("Perdona, no he entendido bien el dia de inicio.")
+            return 
         counti = 1
         if not freq == "unica":
             self.talk(f'¿Durante {say} quieres que se repita?')
@@ -379,6 +385,9 @@ class AsistenteVoz():
             count = self.normalize(count)
             print(count)
             counti = self.text2int(count)
+            if counti is None:
+                self.talk("Perdona, no he entendido bien el número de repeticiones.")
+                return 
             print(str(counti))
 
         self.talk("¿A qué hora?")
@@ -583,54 +592,57 @@ class AsistenteVoz():
 
     # Dado un texto saca la fecha (datetime), ej: "que tengo planeado el 3 de julio" devueve 03/06
     def get_fecha(self, text):
-        text = text.lower()
-        now = datetime.datetime.now()
+        try:
+            text = text.lower()
+            now = datetime.datetime.now()
 
-        if text.count("hoy") > 0:
-            return now
+            if text.count("hoy") > 0:
+                return now
 
-        dia = -1
-        dia_semana = -1
-        mes = -1
-        anio = now.year
-        ndias = 0
+            dia = -1
+            dia_semana = -1
+            mes = -1
+            anio = now.year
+            ndias = 0
 
-        if 'mañana' in text:
-            return now + datetime.timedelta(days=1)
-        else:
-            for word in text.split():
-                if word in MESES:
-                    mes = MESES.index(word) + 1
-                    if word in DIAS30:
-                        ndias = 30
-                    elif word in DIAS31:
-                        ndias = 31
-                    else:
-                        ndias = 28
-                elif word in DIAS:
-                    dia_semana = DIAS.index(word)
-                elif word.isdigit():
-                    dia = int(word)
+            if 'mañana' in text:
+                return now + datetime.timedelta(days=1)
+            else:
+                for word in text.split():
+                    if word in MESES:
+                        mes = MESES.index(word) + 1
+                        if word in DIAS30:
+                            ndias = 30
+                        elif word in DIAS31:
+                            ndias = 31
+                        else:
+                            ndias = 28
+                    elif word in DIAS:
+                        dia_semana = DIAS.index(word)
+                    elif word.isdigit():
+                        dia = int(word)
 
-            if mes < now.month and mes != -1:
-                anio = anio + 1
+                if mes < now.month and mes != -1:
+                    anio = anio + 1
 
-            if dia < now.day and mes == -1 and dia != -1:
-                mes = now.month + 1
-            elif mes == -1 and dia == -1 and dia_semana != -1:
-                dia_semana_actual = now.weekday()
-                dif = dia_semana - dia_semana_actual
+                if dia < now.day and mes == -1 and dia != -1:
+                    mes = now.month + 1
+                elif mes == -1 and dia == -1 and dia_semana != -1:
+                    dia_semana_actual = now.weekday()
+                    dif = dia_semana - dia_semana_actual
 
-                if dif < 0:
-                    dif = dif + 7
+                    if dif < 0:
+                        dif = dif + 7
 
-                return now + datetime.timedelta(dif)
+                    return now + datetime.timedelta(dif)
 
-            if mes == -1:
-                mes = now.month
+                if mes == -1:
+                    mes = now.month
 
-        print(f"{dia}/{mes}/{anio}")
-        return datetime.datetime(month=mes, day=dia, year=anio)
+            print(f"{dia}/{mes}/{anio}")
+            return datetime.datetime(month=mes, day=dia, year=anio)
+        except:
+            print("error obteniendo fecha")
 
     def syncCalendars(self):
         hoy = datetime.datetime.now()
