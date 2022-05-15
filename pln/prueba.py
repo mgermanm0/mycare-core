@@ -514,7 +514,7 @@ class AsistenteVoz():
             end = str(fecha.year)+'-'+str(fecha.month)+'-' + \
                 str(fecha.day)+'T'+str(houri)+':'+str(mins)+':00+02:00'
             
-            rrule_freq = ""
+            rrule_freq = None
             if not 'unica' in freq:
                 if 'dia' in freq:
                     rrule_freq = 'RRULE:FREQ=DAILY'
@@ -523,14 +523,14 @@ class AsistenteVoz():
                 elif 'mensua' in freq:
                     rrule_freq = 'RRULE:FREQ=MONTHLY'
 
-                if until is not None and "RRULE" in freq:
+                if until is not None and rrule_freq is not None:
                     untilstr = until.strftime("%Y%m%dT%H%M%SZ")
                     rrule_freq += ';UNTIL=' + untilstr
 
-                elif count != 0:
-                    rrule_freq = freq+";COUNT="+str(count)
+                elif count != 0 and rrule_freq is not None:
+                    rrule_freq += ";COUNT="+str(count)
             event=None
-            if freq:
+            if rrule_freq:
                 event = {
                     'summary': nombre,
                     # 'location': 'Miguel Romera, Jaen',
