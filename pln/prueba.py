@@ -54,7 +54,7 @@ class AsistenteVoz():
         
         voiceSel=None
         for voice in self.engine.getProperty('voices'):
-            print(voice.languages)
+            #print(voice.languages)
             if b'\x05es' in voice.languages:
                 voiceSel=voice
         
@@ -126,7 +126,14 @@ class AsistenteVoz():
     # Reproduce por voz el texto que se le pasa
     # param: [in] trext String
     def talk(self, text):
-        self.engine.say(text)
+        username = self.getUsername()
+        if username is not None:
+            if "¿" in text or "?" in text:
+                self.engine.say(username + ", " + text)
+            else:
+                self.engine.say(text + ", " + username)
+        else:
+            self.engine.say(text)
         self.engine.runAndWait()
 
 
@@ -140,7 +147,6 @@ class AsistenteVoz():
                 self.listener.adjust_for_ambient_noise(source, duration=0.5)
                 print("listening...")
                 voice = self.listener.record(source, duration=5)
-
                 command = self.listener.recognize_google(voice, language="es-ES")
                 command = command.lower()
                 print("Audio recogido: ", command)
@@ -155,18 +161,9 @@ class AsistenteVoz():
 
     # Por si queremos meter alarmas. Está sin terminar.
     def establecer_alarma(self, hora):
-        now = datetime.datetime.now()
-        hora_actual = now.hour
-
-        hora_actuali = int(hora_actual)
-        horai = int(hora[0])
-
-        #       19                  8                                                  8               7
-        if (hora_actuali > 12 and horai < 12 and hora_actuali < (horai+12)) or (hora_actuali < 12 and horai < 12 and hora_actuali > (horai+12)):
-            horai = horai + 12
-
-        print('Alarma establecida a las '+str(horai)+' y '+hora[1])
-        self.talk('Alarma establecida a las '+str(horai)+' y '+hora[1])
+        self.gestorEventos.estableceAlarma(hora)
+        print('Alarma establecida a las ' + hora)
+        self.talk('Alarma establecida a las ' + hora)
 
 
     # Text_to_Int
@@ -224,126 +221,7 @@ class AsistenteVoz():
             if t in units:
                 return units[t], i
         return None, -1
-        """
-        units = [
-            "cero", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho",
-            "nueve", "diez", "once", "doce", "trece", "catorce", "quince",
-            "dieciseis", "siecisiete", "dieciocho", "diecinueve", "veinte" , "veintiuno"
-            "veinteidos", "veintitres", "veinticuatro" ]
-        for u in units:
-            if u in text:
-                i = units.index(u)
-                if i == 0 or i== 24:
-                    hs="00"
-                    break
-                elif i == 1:
-                    hs = "01"
-                    break
-                elif i == 2:
-                    hs = "02"
-                    break
-                elif i == 3:
-                    hs = "03"
-                    break
-                elif i == 4:
-                    hs = "04"
-                elif i == 5:
-                    hs = "05"
-                    break
-                elif i == 6:
-                    hs = "06"
-                elif i == 7:
-                    hs = "07"
-                    break
-                elif i == 8:
-                    hs = "08" 
-                    break
-                elif i == 9:
-                    hs = "09"
-                    break
-                elif i == 10:
-                    hs = "10"
-                    break
-                elif i == 11:
-                    hs = "11"
-                    break
-                elif i == 12:
-                    hs = "12"
-                    break
-                elif i == 13:
-                    hs = "13"
-                elif i == 14:
-                    hs = "14"
-                    break
-                elif i == 15:
-                    hs = "15"
-                    break
-                elif i == 16:
-                    hs = "16"
-                    break
-                elif i == 17:
-                    hs = "17"
-                    break
-                elif i == 18:
-                    hs = "18"
-                    break
-                elif i == 19:
-                    hs = "19"
-                    break
-                elif i == 20:
-                    hs = "20"
-                    break
-                elif i == 21:
-                    hs = "21"
-                    break
-                elif i == 22:
-                    hs = "22"
-                    break
-                else:
-                    hs = "23"
-                    break
-        return hs
-        """
-
-    """
-    def unidades_mins(text):
-        minutos = ["y cinco": "05", "y diez": "10", "y quince": "15", "y cuarto": "15", "y veinte": "20", "y veinticinco": "25", "y media": "30", "treinta": "30",
-                "menos veinticinco":"35": "menos veinte": "40", "menos cuarto": "45", "menos quince": "45", "menos diez": "50", "menos cinco": "55", "en punto": "00"]
-        minutos = ["y cinco", "y diez", "y quince", "y cuarto", "y veinte", "y media", "treinta",
-                "menos veinte", "menos cuarto", "menos quince", "menos diez", "menos cinco"]
-        ms = "00"
-        for e in minutos:
-            if e in text:
-                i = minutos.index(e)
-                if i == 0:
-                    ms = "05"
-                    break
-                elif i == 1:
-                    ms = "10"
-                    break
-                elif i == 2 or i == 3:
-                    ms = "15"
-                    break
-                elif i == 4:
-                    ms = "20"
-                elif i == 5 or i == 6:
-                    ms = "30"
-                    break
-                elif i == 7:
-                    ms = "40"
-                    break
-                elif i == 8 or i == 9:
-                    ms = "45"
-                    break
-                elif i == 10:
-                    ms = "50"
-                    break
-                else:
-                    ms = "55"
-                    break
-        return ms
-    """
-
+        
     def get_hora(self, text):
 
         #hora numerica en mensaje
@@ -418,7 +296,10 @@ class AsistenteVoz():
 
         elif 'alarma' in comando:
             hora = comando.replace('alarma', '')
-            hora = re.findall(r'\d+', hora)
+            self.talk("¿A qué hora?")
+            hora_str = self.take_command()
+            hora_str = self.normalize(hora_str)
+            hora = self.get_hora(hora_str)
             self.establecer_alarma(hora)
 
         elif 'hora' in comando:
@@ -436,7 +317,7 @@ class AsistenteVoz():
         elif "mi nombre" in comando:
             name = self.getUsername()
             if name is not None:
-                self.talk("Eres " + name)
+                self.talk("Eres ")
             else:
                 self.talk("Vaya, perdona, pero es que no te conozco. ¿Cómo te llamas?")
                 nombre = self.take_command()
@@ -459,18 +340,9 @@ class AsistenteVoz():
         print(str(nombre))
         self.talk("El nombre del recordatorio es "+nombre)
 
-        self.talk("¿Quieres que se repita diariamente, semanalmente o mensualmente?")
+        self.talk("¿Quieres que se repita diariamente, semanalmente, mensualmente o una única vez?")
         freq = self.take_command()
         freq = self.normalize(freq)
-        self.talk("La frecuencia de repetición es " + freq)
-        print(str(freq))
-
-        self.talk("Dime el dia de inicio")
-        dia = self.take_command()
-        self.talk(("El dia de inicio es "+dia))
-        dia = self.normalize(dia)
-        dia_i = self.get_fecha(dia)
-
         if "semanal" in freq:
             freq = "semanal"
             say = "cuantas semanas"
@@ -482,16 +354,28 @@ class AsistenteVoz():
         elif "dia" in freq:
             freq = "dias"
             say = " cuantos días "
+            
+        elif "unica" in freq:
+            freq = "unica"
         else:
             self.talk("No entiendo esa frecuencia. Prueba a crear de nuevo el recordatorio")
             return
+        self.talk("La frecuencia de repetición es " + freq)
+        print(str(freq))
 
-        self.talk(f'¿Durante {say} quieres que se repita?')
-        count = self.take_command()
-        count = self.normalize(count)
-        print(count)
-        counti = self.text2int(count)
-        print(str(counti))
+        self.talk("Dime el dia de inicio")
+        dia = self.take_command()
+        self.talk(("El dia de inicio es "+dia))
+        dia = self.normalize(dia)
+        dia_i = self.get_fecha(dia)
+        counti = 1
+        if not freq == "unica":
+            self.talk(f'¿Durante {say} quieres que se repita?')
+            count = self.take_command()
+            count = self.normalize(count)
+            print(count)
+            counti = self.text2int(count)
+            print(str(counti))
 
         self.talk("¿A qué hora?")
         hora_str = self.take_command()
@@ -504,7 +388,7 @@ class AsistenteVoz():
             )], count=counti, id_calendar=id_calendar)  # Agregamos el evento al gestorEventos mediante este método
             self.talk(
                 f'¡Perfecto! He creado el recordatorio {nombre} que se repetirá {count} veces.')
-            self.talk(f'Te lo recordaré {freq}')
+            self.talk(f'Te lo recordaré con frecuencia {freq}')
 
 
     def calendar2local(self, event):
