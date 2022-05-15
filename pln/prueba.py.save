@@ -51,17 +51,7 @@ class AsistenteVoz():
         self.gestorEventos.addEjecucionScheduler(check.checkInternet)
         self.username = None
         self.lock = threading.Lock()
-        
-        voiceSel=None
-        for voice in self.engine.getProperty('voices'):
-            print(voice.languages)
-            if b'\x05es' in voice.languages:
-                voiceSel=voice
-        
-        if voiceSel is not None:
-            print("voice esp encontrada")
-            self.engine.setProperty('voice', voiceSel.id)
-
+	
     def getUsername(self):
         try:
             self.lock.acquire()

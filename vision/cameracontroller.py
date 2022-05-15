@@ -1,7 +1,7 @@
 import subprocess
 import time
 UVCDYNCTRLEXEC="/usr/bin/uvcdynctrl"
-fedora = True
+fedora = False
 panorder = "Pan (relative)"
 if fedora:
     panorder = "Pan, Relative"
