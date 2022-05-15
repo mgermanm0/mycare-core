@@ -513,21 +513,22 @@ class AsistenteVoz():
 
             end = str(fecha.year)+'-'+str(fecha.month)+'-' + \
                 str(fecha.day)+'T'+str(houri)+':'+str(mins)+':00+02:00'
-            freq = None
+            
+            rrule_freq = ""
             if not 'unica' in freq:
                 if 'dia' in freq:
-                    freq = 'RRULE:FREQ=DAILY'
+                    rrule_freq = 'RRULE:FREQ=DAILY'
                 elif 'semana' in freq:
-                    freq = 'RRULE:FREQ=WEEKLY'
+                    rrule_freq = 'RRULE:FREQ=WEEKLY'
                 elif 'mensua' in freq:
-                    freq = 'RRULE:FREQ=MONTHLY'
+                    rrule_freq = 'RRULE:FREQ=MONTHLY'
 
                 if until is not None and "RRULE" in freq:
                     untilstr = until.strftime("%Y%m%dT%H%M%SZ")
-                    freq += ';UNTIL=' + untilstr
+                    rrule_freq += ';UNTIL=' + untilstr
 
                 elif count != 0:
-                    freq = freq+";COUNT="+str(count)
+                    rrule_freq = freq+";COUNT="+str(count)
             event=None
             if freq:
                 event = {
@@ -543,7 +544,7 @@ class AsistenteVoz():
                         'timeZone': 'Europe/Madrid',
                     },
                     'recurrence': [
-                        freq
+                        rrule_freq
                     ]
                 }
             else:
@@ -569,7 +570,7 @@ class AsistenteVoz():
                     {'method': 'popup', 'minutes': 10},
                     ],
                 },'''
-
+            print(event)
             event = self.service.events().insert(calendarId="primary", body=event).execute()
             return event['id']
         except Exception as e:
