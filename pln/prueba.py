@@ -389,6 +389,8 @@ class AsistenteVoz():
             self.talk(
                 f'¡Perfecto! He creado el recordatorio {nombre} que se repetirá {count} veces.')
             self.talk(f'Te lo recordaré con frecuencia {freq}')
+            return
+        self.talk("Perdona, pero no te he entendido bien. Prueba a crear el recordatorio de nuevo")
 
 
     def calendar2local(self, event):
@@ -510,37 +512,53 @@ class AsistenteVoz():
 
             end = str(fecha.year)+'-'+str(fecha.month)+'-' + \
                 str(fecha.day)+'T'+str(houri)+':'+str(mins)+':00+02:00'
+            freq = None
+            if not 'unica' in freq:
+                if 'dia' in freq:
+                    freq = 'RRULE:FREQ=DAILY'
+                elif 'semana' in freq:
+                    freq = 'RRULE:FREQ=WEEKLY'
+                elif 'mensua' in freq:
+                    freq = 'RRULE:FREQ=MONTHLY'
 
-            if 'dia' in freq:
-                freq = 'RRULE:FREQ=DAILY'
-            elif 'semana' in freq:
-                freq = 'RRULE:FREQ=WEEKLY'
-            elif 'mensua' in freq:
-                freq = 'RRULE:FREQ=MONTHLY'
+                if until is not None and "RRULE" in freq:
+                    untilstr = until.strftime("%Y%m%dT%H%M%SZ")
+                    freq += ';UNTIL=' + untilstr
 
-            if until is not None and "RRULE" in freq:
-                untilstr = until.strftime("%Y%m%dT%H%M%SZ")
-                freq += ';UNTIL=' + untilstr
+                elif count != 0:
+                    freq = freq+";COUNT="+str(count)
 
-            if count != 0:
-                freq = freq+";COUNT="+str(count)
-
-            event = {
-                'summary': nombre,
-                # 'location': 'Miguel Romera, Jaen',
-                # 'description': 'Una descripcion',
-                'start': {
-                    'dateTime': start,
-                    'timeZone': 'Europe/Madrid',
-                },
-                'end': {
-                    'dateTime': end,
-                    'timeZone': 'Europe/Madrid',
-                },
-                'recurrence': [
-                    freq
-                ]
-            }
+            if freq:
+                event = {
+                    'summary': nombre,
+                    # 'location': 'Miguel Romera, Jaen',
+                    # 'description': 'Una descripcion',
+                    'start': {
+                        'dateTime': start,
+                        'timeZone': 'Europe/Madrid',
+                    },
+                    'end': {
+                        'dateTime': end,
+                        'timeZone': 'Europe/Madrid',
+                    },
+                    'recurrence': [
+                        freq
+                    ]
+                }
+            else:
+                event = {
+                    'summary': nombre,
+                    # 'location': 'Miguel Romera, Jaen',
+                    # 'description': 'Una descripcion',
+                    'start': {
+                        'dateTime': start,
+                        'timeZone': 'Europe/Madrid',
+                    },
+                    'end': {
+                        'dateTime': end,
+                        'timeZone': 'Europe/Madrid',
+                    }
+                }  
 
             ''',
                 'reminders': {
