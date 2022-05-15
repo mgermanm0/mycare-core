@@ -40,6 +40,8 @@ RULE2SPANISH = {'DAILY': 'diaria', 'WEEKLY': 'semanal', 'MONTHLY': 'mensual'}
 
 class AsistenteVoz():
     def __init__(self) -> None:
+        self.asistentevision = None
+    def __deferedinit(self):
         self.service = self.autentificacion_google()
         self.engine = pyttsx3.init()
         self.listener = sr.Recognizer()
@@ -49,8 +51,7 @@ class AsistenteVoz():
         self.gestorEventos.addEjecucionScheduler(check.checkInternet)
         self.username = None
         self.lock = threading.Lock()
-        self.asistentevision = None
-        
+
     def getUsername(self):
         try:
             self.lock.acquire()
@@ -739,6 +740,7 @@ class AsistenteVoz():
         self.talk("No tengo conexión a internet. Podré recordarte los eventos de tu calendario, pero no podré hacer mucho mas.")
         
     def mycare_pln_start(self):
+        self.__deferedinit()
         self.talk("Hola amigo")
         self.syncCalendars()
         # print(speed)

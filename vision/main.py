@@ -55,7 +55,7 @@ class AsistenteVision():
                         user = self.recognizer.recognize(face_img)
                         if user != "Desconocido":
                             self.asistente.setUsername(user)
-                        print(user)
+                            print(user)
                     if DEBUG:
                         cv2.imshow("cv", frame)
                         if cv2.waitKey(1) & 0xFF == ord('q'):
