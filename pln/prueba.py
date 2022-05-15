@@ -300,7 +300,10 @@ class AsistenteVoz():
             hora_str = self.take_command()
             hora_str = self.normalize(hora_str)
             hora = self.get_hora(hora_str)
-            self.establecer_alarma(hora)
+            if hora is not None:
+                self.establecer_alarma(hora)
+            else:
+                self.talk("Perdona, no te he entendido bien.")
 
         elif 'hora' in comando:
             time = datetime.datetime.now().strftime('%H:%M')
@@ -382,7 +385,7 @@ class AsistenteVoz():
         hora_str = self.take_command()
         hora_str = self.normalize(hora_str)
         hora = self.get_hora(hora_str)
-        if(dia_i is not None):
+        if(dia_i is not None and hora is not None):
             dia_i = dia_i.replace(microsecond=0)
             id_calendar = self.set_evento(nombre, dia_i, hora, freq, counti)
             self.gestorEventos.defineEvento(nombre, freq, dia_i, hora, DIAS[dia_i.weekday(
