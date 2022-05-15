@@ -72,7 +72,7 @@ class GestorEventos:
     def addEventoScheduler(self, evento):
         frecuencia = evento.frecuencia
         hora = evento.hora
-        hi, mi = hora.split(":")
+        hora_split = hora.split(":")
         fini = evento.fechaInicial
         diaSemana = evento.diaSemana
         until = evento.until + datetime.timedelta(minutes=1)
@@ -94,7 +94,7 @@ class GestorEventos:
         elif "dia" in frecuencia:
             schedule.every().day.at(hora).until(until).do(self.ejecutaEvento, evento)
         else:
-            fini = fini.replace(hour=int(hi), minute=int(mi))
+            fini = fini.replace(hour=int(hora_split[0]), minute=int(hora_split[1]))
             seconds = fini - datetime.datetime.now()
             seconds = seconds.total_seconds()
             schedule.every(int(seconds)).seconds.do(self.ejecutaEventoUnico,evento)
