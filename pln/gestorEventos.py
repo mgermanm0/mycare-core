@@ -148,16 +148,19 @@ class GestorEventos:
         
     def defineEvento(self, titulo, frecuencia, fechaInicial, hora = "00:00", diaSemana = "", count = None, id_calendar=None, until_precalc = None ):
         until = until_precalc
-        if until is None and "unica" not in frecuencia:
+        if until is None:
             if "semana" in frecuencia:
                 until = fechaInicial + datetime.timedelta(weeks=count)
             elif "mensual" in frecuencia or "mes" in frecuencia:
                 until = fechaInicial + relativedelta(months=count)
             elif "dia" in frecuencia:
                 until = fechaInicial + datetime.timedelta(days=count)
+            elif "unica" in frecuencia:
+                until = fechaInicial # acaban el mismo dia los eventos unicos
             ihora, imin = hora.split(":")
             until = until.replace(hour = int(ihora), minute= int(imin))
-                
+        
+        
         sqlite_insert = """INSERT INTO 'eventos' 
                         ('calendar_id', 'titulo', 'frecuencia', 'fechaInicial', 'hora', 'diaSemana', 'until')
                         VALUES (?,?,?,?,?,?,?);"""

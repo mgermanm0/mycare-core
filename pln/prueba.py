@@ -357,6 +357,7 @@ class AsistenteVoz():
             
         elif "unica" in freq:
             freq = "unica"
+            say = "unica"
         else:
             self.talk("No entiendo esa frecuencia. Prueba a crear de nuevo el recordatorio")
             return
