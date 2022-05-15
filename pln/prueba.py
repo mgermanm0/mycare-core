@@ -388,7 +388,7 @@ class AsistenteVoz():
             self.gestorEventos.defineEvento(nombre, freq, dia_i, hora, DIAS[dia_i.weekday(
             )], count=counti, id_calendar=id_calendar)  # Agregamos el evento al gestorEventos mediante este método
             self.talk(
-                f'¡Perfecto! He creado el recordatorio {nombre} que se repetirá {count} veces.')
+                f'¡Perfecto! He creado el recordatorio {nombre} que se repetirá {counti} veces.')
             self.talk(f'Te lo recordaré con frecuencia {freq}')
             return
         self.talk("Perdona, pero no te he entendido bien. Prueba a crear el recordatorio de nuevo")
@@ -528,7 +528,7 @@ class AsistenteVoz():
 
                 elif count != 0:
                     freq = freq+";COUNT="+str(count)
-
+            event=None
             if freq:
                 event = {
                     'summary': nombre,
