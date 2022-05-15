@@ -1,5 +1,4 @@
 import threading
-from sympy import root
 from constantes import DEBUG
 from vision.datagen import FaceDatasetGenerator
 from vision.detector import HaarCascadeDetector
