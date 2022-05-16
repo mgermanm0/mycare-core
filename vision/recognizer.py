@@ -43,7 +43,7 @@ class FaceRecognizer(Recognizer):
                 rgbimg = image[:, :, ::-1]
                 height, width, channels = rgbimg.shape
                 #resized_img = cv2.resize(image, (0,0), fx=0.25, fy=0.25)
-                encodigns = face_recognition.face_encodings(rgbimg, known_face_locations=[(0,0,width-1, height-1)])
+                encodigns = face_recognition.face_encodings(rgbimg)
                 if len(encodigns) > 0:
                     encodign = encodigns[0]
                     self.names.append(label)
@@ -57,7 +57,7 @@ class FaceRecognizer(Recognizer):
         rgb = face[:, :, ::-1] # BGR 2 RGB
         #cv2.imshow("face", rgb)
         height, width, channels = rgb.shape
-        encoding = face_recognition.face_encodings(rgb, known_face_locations=[(0,0,width-1, height-1)])
+        encoding = face_recognition.face_encodings(rgb)
         if len(encoding) == 0:
             return "Desconocido"
         matches = face_recognition.compare_faces(numpy.array(self.encodigns),

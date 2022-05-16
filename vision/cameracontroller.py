@@ -25,9 +25,6 @@ class CameraController(DeviceController):
         #print("Right")
         #if (value + self.panVal >= -4480):
         #self.panVal += value
-        order = "Pan (relative)"
-        if fedora:
-            order = "Pan, relative"
         return subprocess.run([UVCDYNCTRLEXEC, "-d", self.deviceName, "-s" , panorder, "--", value], shell=False)
     
     def left(self, value="100"):
@@ -49,8 +46,14 @@ class CameraController(DeviceController):
         return subprocess.run([UVCDYNCTRLEXEC, "-d", self.deviceName, "-s" , tiltorder, "--", value], shell=False)
     
     def reset(self):
-        subprocess.Popen([UVCDYNCTRLEXEC, "-d", self.deviceName, "-s" , "Pan, Reset", "0"])
-        time.sleep(5)
-        subprocess.Popen([UVCDYNCTRLEXEC, "-d", self.deviceName, "-s" , "Tilt, Reset", "0"])
-        time.sleep(5)
+        if fedora:
+            subprocess.Popen([UVCDYNCTRLEXEC, "-d", self.deviceName, "-s" , "Pan, Reset", "0"])
+            time.sleep(5)
+            subprocess.Popen([UVCDYNCTRLEXEC, "-d", self.deviceName, "-s" , "Tilt, Reset", "0"])
+            time.sleep(5)
+        else:
+            subprocess.Popen([UVCDYNCTRLEXEC, "-d", self.deviceName, "-s" , "Pan Reset", "0"])
+            time.sleep(5)
+            subprocess.Popen([UVCDYNCTRLEXEC, "-d", self.deviceName, "-s" , "Tilt Reset", "0"])
+            time.sleep(5)
         return 1
