@@ -1,9 +1,13 @@
+from email.encoders import encode_noop
+import encodings
+from operator import sub
 from unicodedata import name
 import numpy as np
 import face_recognition
 import cv2
 import pickle
 import os
+import numpy
 
 rootdir = os.getcwd()
 
@@ -23,28 +27,41 @@ class FaceRecognizer(Recognizer):
         self.encodigns = []
         self.names = []
         self.id = 0
-        super().__init__()
     # https://projectgurukul.org/deep-learning-project-face-recognition-with-python-opencv/
     def train(self):
-        for subdir, dirs, files in os.walk(rootdir+os.sep + "datasets"):
+        for subdir, dirs, files in os.walk(rootdir + os.sep + "vision" + os.sep + "datasets" + os.sep):
+            cont = 0
+            totalCont = 0
+            label = subdir.split(os.sep)[-1]
+            if label in self.names:
+                continue
             for file in files:
                 #print os.path.join(subdir, file)
                 filepath = subdir + os.sep + file
-                print (filepath)
-                image = cv2.imread(file)
-                rgbimg = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                #print (filepath)
+                image = cv2.imread(filepath)
+                rgbimg = image[:, :, ::-1]
+                height, width, channels = rgbimg.shape
                 #resized_img = cv2.resize(image, (0,0), fx=0.25, fy=0.25)
-                encodign = face_recognition.face_encodings(rgbimg)[0]
-                self.names.append(subdir)
-                self.encodigns.append(encodign)
-                self.id+=1
+                encodigns = face_recognition.face_encodings(rgbimg)
+                if len(encodigns) > 0:
+                    encodign = encodigns[0]
+                    self.names.append(label)
+                    self.encodigns.append(encodign)
+                    cont+=1
+                totalCont+=1
+            print("Para " , subdir, " se han encontrado " , totalCont, "caras de las cuales ", cont, "han sido usadas para el entrenamiento")
     
     def recognize(self, face):
-        #resized_img = cv2.resize(frame, (0,0), fx=0.25, fy=0.25)
-        rgbimg = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
-        encoding = face_recognition.face_encodings(rgbimg)
-        matches = face_recognition.compare_faces(self.encodigns,
-			encoding)
+        #resized_img = cv2.resize(face, (0,0), fx=0.25, fy=0.25)
+        rgb = face[:, :, ::-1] # BGR 2 RGB
+        #cv2.imshow("face", rgb)
+        height, width, channels = rgb.shape
+        encoding = face_recognition.face_encodings(rgb)
+        if len(encoding) == 0:
+            return "Desconocido"
+        matches = face_recognition.compare_faces(numpy.array(self.encodigns),
+			encoding, 0.5)
         trueMatches = [i for (i,b) in enumerate(matches) if b]
         if len(trueMatches) == 0:
             return "Desconocido"

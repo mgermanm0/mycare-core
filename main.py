@@ -1,18 +1,19 @@
-from pln.prueba import mycare_pln_start
-from vision.main import mycare_vision_start
+from pln.prueba import AsistenteVoz
+from vision.main import AsistenteVision
 import threading
-
+import time
 def main():
     print("On!")
+    asistentevoz = AsistenteVoz()
+    asistentevision = AsistenteVision("video0", 0, asistentevoz)
     """
-    vision_thread = threading.Thread(name="vision-thread", target=mycare_vision_start)
+    vision_thread = threading.Thread(name="vision-thread", target=asistentevision.mycare_vision_start)
     vision_thread.start()
-    vision_thread.join()
     """
-    mycare_pln_start()
-    
-    #mycare_vision_start()
+    voz_thread = threading.Thread(name="voz-thread", target=asistentevoz.mycare_pln_start)
+    asistentevoz.asistentevision = asistentevision
+    voz_thread.start()
+    asistentevision.mycare_vision_start()
     pass
-    
 if __name__ == "__main__":
     main()

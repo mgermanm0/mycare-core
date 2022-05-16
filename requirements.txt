@@ -10,3 +10,6 @@ schedule>=1.1.0
 numpy>=1.22.3
 opencv-python>=4.5.5.64
 face-recognition>=1.3.0
+pyasn1
+pyopenssl
+ndg-httpsclient
